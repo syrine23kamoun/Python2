@@ -1,0 +1,46 @@
+pipeline {
+agent any
+stages {
+stage('Preparation') {
+steps {
+catchError(buildResult: 'SUCCESS') {
+sh 'docker stop samplerunning'
+sh 'docker rm samplerunning'
+}
+}
+}
+stage('Build') {
+steps {
+build job: 'BuildAppJob', propagate: true
+}
+}
+stage('Checkov Docker-Helm') {
+steps {
+script {
+dir('docker-images') {
+sh "pipenv run checkov --quiet --framework dockerfile -f ./Dockerfile -o cli -o junitxml --output-file-path console,checkov_docker.xml || true"
+junit allowEmptyResults: true, skipPublishingChecks: true, skipMarkingBuildUnstable: true, testResults: 'checkov_docker.xml'
+archiveArtifacts artifacts: 'checkov_docker.xml', followSymlinks: false
+}
+}
+}
+<<<<<<< HEAD
+=======
+}
+
+stage('Results') {
+steps {
+build job: 'TestAppJob', propagate: true
+}
+}
+}
+>>>>>>> 94b3ce190e28a8d989df57f14816a85bfb89327f
+}
+
+stage('Results') {
+steps {
+build job: 'TestAppJob', propagate: true
+}
+}
+}
+}
